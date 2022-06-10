@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Paint</string>
+    <string name="color">Color</string>
+    <string name="pick_stroke_width_prompt">Pick stroke width</string>
+    <string name="stroke_width">Stroke width</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="draw_rectangle">Draw\nrectangle</string>
+</resources>
