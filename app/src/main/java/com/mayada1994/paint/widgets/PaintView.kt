@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
@@ -12,6 +13,8 @@ import android.view.ViewConfiguration
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.withStyledAttributes
 import com.mayada1994.paint.R
+import com.mayada1994.paint.entities.PaintObject
+import com.mayada1994.paint.entities.Rectangle
 import com.mayada1994.paint.entities.Stroke
 import kotlin.math.abs
 
@@ -22,11 +25,18 @@ class PaintView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    enum class PaintMode {
+        LINE,
+        RECTANGLE
+    }
+
     // Path representing the drawing so far
-    private val drawings = arrayListOf<Stroke>()
+    private val drawings = arrayListOf<PaintObject>()
 
     // Path representing what's currently being drawn
-    private var curPath = Path()
+    private var currentPaintMode = PaintMode.LINE
+    private var currentPath = Path()
+    private var currentRectF = RectF()
     private var currentStrokeWidth = 12f
     private var currentColor = ResourcesCompat.getColor(resources, R.color.black, null)
 
@@ -65,19 +75,31 @@ class PaintView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         // Draw the drawing so far
-        drawings.forEach {
+        drawings.filterIsInstance<Stroke>().forEach {
             paint.apply {
                 color = it.color
                 strokeWidth = it.strokeWidth
             }
             canvas.drawPath(it.path, paint)
         }
+
+        drawings.filterIsInstance<Rectangle>().forEach {
+            paint.apply {
+                color = it.color
+                strokeWidth = it.strokeWidth
+            }
+            canvas.drawRect(it.rectF, paint)
+        }
+
         // Draw any current squiggle
         paint.apply {
             color = currentColor
             strokeWidth = currentStrokeWidth
         }
-        canvas.drawPath(curPath, paint)
+        when (currentPaintMode) {
+            PaintMode.LINE -> canvas.drawPath(currentPath, paint)
+            PaintMode.RECTANGLE -> canvas.drawRect(currentRectF, paint)
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -93,33 +115,62 @@ class PaintView @JvmOverloads constructor(
     }
 
     private fun touchStart() {
-        curPath = Path()
-        curPath.moveTo(motionTouchEventX, motionTouchEventY)
-        currentX = motionTouchEventX
-        currentY = motionTouchEventY
+        when (currentPaintMode) {
+            PaintMode.LINE -> {
+                currentPath.moveTo(motionTouchEventX, motionTouchEventY)
+                currentX = motionTouchEventX
+                currentY = motionTouchEventY
+            }
+            PaintMode.RECTANGLE -> {
+                currentRectF.left = motionTouchEventX
+                currentRectF.top = motionTouchEventY
+            }
+        }
     }
 
     private fun touchMove() {
-        val dx = abs(motionTouchEventX - currentX)
-        val dy = abs(motionTouchEventY - currentY)
-        if (dx >= touchTolerance || dy >= touchTolerance) {
-            // QuadTo() adds a quadratic bezier from the last point,
-            // approaching control point (x1,y1), and ending at (x2,y2).
-            curPath.quadTo(
-                currentX,
-                currentY,
-                (motionTouchEventX + currentX) / 2,
-                (motionTouchEventY + currentY) / 2
-            )
-            currentX = motionTouchEventX
-            currentY = motionTouchEventY
+        when (currentPaintMode) {
+            PaintMode.LINE -> {
+                val dx = abs(motionTouchEventX - currentX)
+                val dy = abs(motionTouchEventY - currentY)
+                if (dx >= touchTolerance || dy >= touchTolerance) {
+                    // QuadTo() adds a quadratic bezier from the last point,
+                    // approaching control point (x1,y1), and ending at (x2,y2).
+                    currentPath.quadTo(
+                        currentX,
+                        currentY,
+                        (motionTouchEventX + currentX) / 2,
+                        (motionTouchEventY + currentY) / 2
+                    )
+                    currentX = motionTouchEventX
+                    currentY = motionTouchEventY
+                    currentRectF.right = currentX
+                    currentRectF.bottom = currentY
+                }
+                invalidate()
+            }
+            PaintMode.RECTANGLE -> {
+                val dx = abs(motionTouchEventX - currentX)
+                val dy = abs(motionTouchEventY - currentY)
+                if (dx >= touchTolerance || dy >= touchTolerance) {
+                    currentRectF.right = motionTouchEventX
+                    currentRectF.bottom = motionTouchEventY
+                }
+                invalidate()
+            }
         }
-        invalidate()
     }
 
     private fun touchUp() {
         // Add the current path to the drawing so far
-        drawings.add(Stroke(currentColor, currentStrokeWidth, curPath))
+        drawings.add(
+            when (currentPaintMode) {
+                PaintMode.LINE -> Stroke(currentColor, currentStrokeWidth, currentPath)
+                PaintMode.RECTANGLE -> Rectangle(currentColor, currentStrokeWidth, currentRectF)
+            }
+        )
+        currentPath = Path()
+        currentRectF = RectF()
     }
 
     fun changeColor(color: Int) {
@@ -133,6 +184,10 @@ class PaintView @JvmOverloads constructor(
     }
 
     fun getStrokeWidth() = currentStrokeWidth.toDp
+
+    fun changePaintMode(paintMode: PaintMode) {
+        currentPaintMode = paintMode
+    }
 
     // region Extensions for metrics
     private val Number.toDp get() = this.toFloat() / resources.displayMetrics.density

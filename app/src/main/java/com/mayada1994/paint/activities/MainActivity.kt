@@ -11,6 +11,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mayada1994.paint.R
 import com.mayada1994.paint.databinding.ActivityMainBinding
 import com.mayada1994.paint.databinding.DialogStrokeWidthPickerBinding
+import com.mayada1994.paint.widgets.PaintView
 
 @SuppressLint("UseCompatTextViewDrawableApis")
 class MainActivity : AppCompatActivity() {
@@ -34,6 +35,8 @@ class MainActivity : AppCompatActivity() {
                 text = paintView.getStrokeWidth().toInt().toString()
                 setOnClickListener { showStrokeWidthPicker() }
             }
+            txtDrawRectangle.setOnClickListener { paintView.changePaintMode(PaintView.PaintMode.RECTANGLE) }
+            txtDrawLine.setOnClickListener { paintView.changePaintMode(PaintView.PaintMode.LINE) }
         }
     }
 

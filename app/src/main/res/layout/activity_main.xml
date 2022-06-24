@@ -48,14 +48,26 @@
             app:layout_constraintStart_toEndOf="@id/txtSelectedColor" />
 
         <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/txtDrawLine"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:gravity="center"
+            android:text="@string/draw_line"
+            app:layout_constraintBottom_toBottomOf="@id/txtSelectedColor"
+            app:layout_constraintStart_toEndOf="@id/txtStrokeWidth"
+            app:layout_constraintTop_toTopOf="@id/txtSelectedColor" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/txtDrawRectangle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:gravity="center"
             android:text="@string/draw_rectangle"
-            app:layout_constraintBottom_toBottomOf="@id/txtSelectedColor"
-            app:layout_constraintStart_toEndOf="@id/txtStrokeWidth"
-            app:layout_constraintTop_toTopOf="@id/txtSelectedColor" />
+            app:layout_constraintBottom_toBottomOf="@id/txtDrawLine"
+            app:layout_constraintStart_toEndOf="@id/txtDrawLine"
+            app:layout_constraintTop_toTopOf="@id/txtDrawLine"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
